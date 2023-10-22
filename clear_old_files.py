@@ -166,7 +166,7 @@ USAGE
         parser.add_argument("-e", "--exclude", dest="exclude", default=None, help="exclude paths matching this regex pattern. [default: %(default)s]", metavar="RE" )
         #parser.add_argument('-V', '--version', action='version', version=program_version_message)
         parser.add_argument('-u', '--user', action="store", help="username. [default: %(default)s]", default='anonymous' )
-        parser.add_argument("-p", '--password', action="store", help="password")
+        parser.add_argument("-p", '--password', action="store", help="password if not provided the script will look for a file with the name '<username>.pass' and read that to get a password")
         parser.add_argument("-?", '--help',  action="help", help="Display this help/usage message")
         parser.add_argument('-d', '--directory', action="store", default='.', help="the ftp directory to start searching from")
         parser.add_argument('-t', '--age', dest="age", action="store", default=0.0, metavar="AGE", type=float, help="the minimum age in days a directory must be before considered for deletion (1 hour = 0.04167 days) [default: %(default)s]")
@@ -200,10 +200,16 @@ USAGE
         if inpat and expat and inpat == expat:
             raise CLIError("include and exclude pattern are equal! Nothing will be processed.")
        
+        if args.password:
+            password = args.password
+        else:
+            f = open(args.user)
+            password = f.readlines()[0].strip()
+            
         #if args.sftp:
-        ssh, ftp = open_sftp_connection(args.host,args.user,args.password)
+        ssh, ftp = open_sftp_connection(args.host, args.user, password)
         #else:
-        #    ftp = ftp_connect(args.host,args.user,args.password)
+        #    ftp = ftp_connect(args.host, args.user, password)
         
         count, size, maxage, alltogo = del_older_than(ftp, args.directory, cutoff, expat, args.listOnly)
         v_print(1, "found files: ", count,", size= ",size, ", newest= ", datetime.datetime.fromtimestamp(maxage), ", allgone=",alltogo)
